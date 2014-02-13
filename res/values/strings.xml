@@ -3,11 +3,13 @@
 
     <string name="app_name">Room Scheduler</string>
     <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
     <string name="edit_message">Enter a String</string>
     <string name="button_send">Send</string>
     <string name="title_activity_display_message">My Message</string>
     <string name="title_activity_view_calendars">View Calendars</string>
     <string name="title_activity_room_details">Room Details</string>
+    <string name="room_status_free">Free</string>
+    <string name="room_status_free_until">Free Until %1$s</string>
+    <string name="room_status_busy_until">Busy Until %1$s</string>
 
 </resources>

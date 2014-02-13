@@ -9,6 +9,7 @@ import android.content.ContentUris;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -39,6 +40,8 @@ public class RoomDetails extends Activity
 	static final int INSTANCE_LOADER = 0;
 	static final int EVENT_LOADER = 1;
 	
+	static long currentTime = 0;
+	
 	// This is the select criteria
 	//static final String SELECTION = "((" +
 	//		CalendarContract.Calendars.CALENDAR_DISPLAY_NAME + " LIKE '%TestCal%'))";
@@ -50,10 +53,16 @@ public class RoomDetails extends Activity
 		// Show the Up button in the action bar.
 		setupActionBar();
 		
+		// Set the time that this page was last refreshed.
+		currentTime = new Date().getTime();
+		TextView dateTime = (TextView) findViewById(R.id.roomDetailsDateTime);
+		DateFormat dateFormat = java.text.DateFormat.getDateTimeInstance();
+		dateTime.setText(dateFormat.format(new Date().getTime()));	
+		
 		// Put the room name in the display.
 		Intent intent = getIntent();
 	    String roomName = intent.getStringExtra(ChooseRoom.CALANDER_DISPLAY_NAME);
-	    TextView roomNameText = (TextView) findViewById(R.id.roomNameTextView);
+	    TextView roomNameText = (TextView) findViewById(R.id.roomDetailsRoomName);
 	    roomNameText.setText(roomName);
 	    
 	    
@@ -66,7 +75,7 @@ public class RoomDetails extends Activity
 		mAdapter = new SimpleCursorAdapter(this, 
 		        R.layout.event_listitem_view, null,
 		        fromColumns, toViews, 0);
-		ListView eventListView = (ListView) findViewById(R.id.eventList);
+		ListView eventListView = (ListView) findViewById(R.id.roomDetailsEventList);
 		eventListView.setAdapter(mAdapter);
 		
 		SimpleCursorAdapter.ViewBinder binder = new SimpleCursorAdapter.ViewBinder() {
@@ -77,14 +86,13 @@ public class RoomDetails extends Activity
 		        int startTimeIndex = cursor.getColumnIndex(CalendarContract.Instances.BEGIN);
 		    	int endTimeIndex = cursor.getColumnIndex(CalendarContract.Instances.END);
 		    	if (columnIndex == startTimeIndex || columnIndex == endTimeIndex)
-		    	{
-			    	long now = new Date().getTime();
+		    	{			    	
 					TextView text = (TextView) view;
 					if (text == null)
 					{
 						return false;
 					}										
-					text.setText(DateUtils.formatSameDayTime(cursor.getLong(columnIndex), now, DateFormat.SHORT, DateFormat.SHORT));
+					text.setText(DateUtils.formatSameDayTime(cursor.getLong(columnIndex), currentTime, DateFormat.SHORT, DateFormat.SHORT));
 					return true;
 		    	}
 		    	else
@@ -103,24 +111,55 @@ public class RoomDetails extends Activity
 	// Called when a new Loader needs to be created
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		Intent intent = getIntent();
-		long now = new Date().getTime();
 		String selection = "(" + CalendarContract.Events.CALENDAR_ID + "=" + intent.getStringExtra(ChooseRoom.CALANDER_ID) +") AND ((" +
-				CalendarContract.Instances.BEGIN + "<" + now + " AND " + CalendarContract.Instances.END + " > " + now + ") OR (" + 
-				CalendarContract.Instances.BEGIN + ">" + now + " AND " + CalendarContract.Instances.BEGIN + "<" + (now + DateUtils.DAY_IN_MILLIS) + "))";
-		String sortOrder = "begin DESC";
+				CalendarContract.Instances.BEGIN + "<" + currentTime + " AND " + CalendarContract.Instances.END + " > " + currentTime + ") OR (" + 
+				CalendarContract.Instances.BEGIN + ">" + currentTime + " AND " + CalendarContract.Instances.BEGIN + "<" + (currentTime + DateUtils.DAY_IN_MILLIS) + "))";
+		String sortOrder = "begin";
 		
 		Uri.Builder builder = CalendarContract.Instances.CONTENT_URI.buildUpon();
 		
-		ContentUris.appendId(builder, now - DateUtils.WEEK_IN_MILLIS);
-		ContentUris.appendId(builder, now + DateUtils.WEEK_IN_MILLIS);
+		ContentUris.appendId(builder, currentTime - DateUtils.WEEK_IN_MILLIS);
+		ContentUris.appendId(builder, currentTime + DateUtils.WEEK_IN_MILLIS);
 		
 		return new CursorLoader(this, builder.build(), null, selection, null, sortOrder);
 	}
 
 	// Called when a previously created loader has finished loading
-	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-		// Swap the new cursor in.  (The framework will take care of closing the
-		// old cursor once we return.)
+	public void onLoadFinished(Loader<Cursor> loader, Cursor data) 
+	{
+		// Update the room status
+		TextView roomStatus = (TextView) findViewById(R.id.roomDetailsRoomStatus);
+		if (data.getCount() < 1)
+		{
+			roomStatus.setText(R.string.room_status_free);
+		}
+		else
+		{
+			data.moveToFirst();
+	    	// TODO: Put these in a more central place so they are not looked up each time.
+			int startTimeIndex = data.getColumnIndex(CalendarContract.Instances.BEGIN);
+	    	int endTimeIndex = data.getColumnIndex(CalendarContract.Instances.END);
+	    	long startTime = data.getLong(startTimeIndex);
+	    	long endTime = data.getLong(endTimeIndex);
+	    	Resources res = getResources();
+	    	DateFormat dateFormat = java.text.DateFormat.getTimeInstance(DateFormat.SHORT);
+	    	if (startTime < currentTime)
+	    	{
+	    		// Room is currently in use.  List status as "Busy until..."	    		
+	    		// TODO: Check to see if there are other events right after this one
+	    		// and adjust the free time accordingly.
+	    		roomStatus.setText(String.format(res.getString(R.string.room_status_busy_until), 
+	    				dateFormat.format(endTime)));
+	    	}
+	    	else
+	    	{
+	    		// Event is coming up later.  List status as "Free until..."
+	    		roomStatus.setText(String.format(res.getString(R.string.room_status_free_until), 
+	    				dateFormat.format(startTime)));
+	    	}
+		}
+		
+		// Update the list of events in the room:
 		mAdapter.swapCursor(data);
 	}
 
