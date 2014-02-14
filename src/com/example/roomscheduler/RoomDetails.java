@@ -19,9 +19,12 @@ import android.text.format.DateUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class RoomDetails extends Activity 
  	implements LoaderManager.LoaderCallbacks<Cursor> 
@@ -102,6 +105,24 @@ public class RoomDetails extends Activity
 		    }
 		};
 		mAdapter.setViewBinder(binder);
+		
+		// If user selects an event in the list, invoke a calendar service to view the event.
+		eventListView.setOnItemClickListener(new OnItemClickListener() {
+			  @Override
+			  public void onItemClick(AdapterView<?> parent, View view,
+			    int position, long id) 
+			  {
+			    Cursor cursor = mAdapter.getCursor();
+			    cursor.moveToPosition(position);
+			    int eventIdColumnIndex = cursor.getColumnIndex(CalendarContract.Instances.EVENT_ID);
+			    long eventId = cursor.getLong(eventIdColumnIndex);
+			    Uri uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId);
+			    Intent intent = new Intent(Intent.ACTION_VIEW)
+			       .setData(uri);
+			    startActivity(intent);
+			    
+			  }
+			});
 		
 		// Prepare the loader.  Either re-connect with an existing one,
 		// or start a new one.
