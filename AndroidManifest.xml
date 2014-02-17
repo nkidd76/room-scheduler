@@ -48,6 +48,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.roomscheduler.MainActivity" />
         </activity>
+        <activity
+            android:name="com.example.roomscheduler.SettingsActivity"
+            android:label="@string/title_activity_settings" >
+        </activity>
     </application>
 
 </manifest>

@@ -1,0 +1,13 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+  
+    <EditTextPreference
+        android:key="default_meeting_title"
+        android:title="@string/pref_default_meeting_title"
+        android:summary="@string/pref_default_meeting_title_summ"
+        android:capitalize="words"
+        android:inputType="textCapWords"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:defaultValue="Meeting" />
+</PreferenceScreen>

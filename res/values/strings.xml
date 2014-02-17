@@ -11,5 +11,7 @@
     <string name="room_status_free">Free</string>
     <string name="room_status_free_until">Free Until %1$s</string>
     <string name="room_status_busy_until">Busy Until %1$s</string>
+    <string name="pref_default_meeting_title">Default Meeting Title</string>
+    <string name="pref_default_meeting_title_summ">Name used for a meeting when a room is quick-booked.</string>
 
 </resources>

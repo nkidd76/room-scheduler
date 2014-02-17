@@ -1,5 +1,7 @@
 package com.example.roomscheduler;
 
+import java.util.Set;
+
 import android.app.ActionBar.LayoutParams;
 import android.app.Activity;
 import android.app.ListActivity;
@@ -8,9 +10,11 @@ import android.content.ContentUris;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.CalendarContract;
 import android.view.Gravity;
 import android.view.Menu;
@@ -53,8 +57,8 @@ protected void onCreate(Bundle savedInstanceState) {
 	root.addView(progressBar);
 	
 	// For the cursor adapter, specify which columns go into which views
-	//String[] fromColumns = {ContactsContract.Data.DISPLAY_NAME};
 	String[] fromColumns = {CalendarContract.Calendars.CALENDAR_DISPLAY_NAME};
+	//String[] fromColumns = {CalendarContract.Calendars._ID};
 	int[] toViews = {android.R.id.text1}; // The TextView in simple_list_item_1
 	
 	// Create an empty adapter we will use to display the loaded data.
@@ -73,8 +77,27 @@ protected void onCreate(Bundle savedInstanceState) {
 public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 	// Now create and return a CursorLoader that will take care of
 	// creating a Cursor for the data being displayed.
+	
+	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+	Set<String> calNames = settings.getStringSet(SettingsActivity.CALENDAR_NAMES, null);
+	String Selection = "";
+	boolean firstCal = true;
+	for(String calName : calNames)
+	{
+		if (!firstCal)
+		{
+			Selection += " OR ";
+		}
+		else
+		{
+			firstCal = false;
+		}
+		Selection += "(" + CalendarContract.Calendars.CALENDAR_DISPLAY_NAME + 
+				"='" + calName + "')";
+	}
+
 	return new CursorLoader(this, CalendarContract.Calendars.CONTENT_URI,
-	        PROJECTION, SELECTION, null, CalendarContract.Calendars.CALENDAR_DISPLAY_NAME);
+	        PROJECTION, Selection, null, CalendarContract.Calendars.CALENDAR_DISPLAY_NAME);
 }
 
 // Called when a previously created loader has finished loading
